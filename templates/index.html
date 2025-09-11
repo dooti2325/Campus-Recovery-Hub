@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Recovery Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-search-location"></i>
+                <span>Campus Recovery Hub</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link active">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/report_lost" class="nav-link">
+                    <i class="fas fa-exclamation-triangle"></i> Report Lost
+                </a>
+                <a href="/report_found" class="nav-link">
+                    <i class="fas fa-search"></i> Report Found
+                </a>
+                <a href="/items" class="nav-link">
+                    <i class="fas fa-list"></i> View Items
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="alert-close">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Lost Something? Found Something?</h1>
+            <p class="hero-subtitle">Your campus community hub for reuniting lost items with their owners</p>
+            <div class="hero-buttons">
+                <a href="/report_lost" class="btn btn-primary">
+                    <i class="fas fa-exclamation-triangle"></i> Report Lost Item
+                </a>
+                <a href="/report_found" class="btn btn-secondary">
+                    <i class="fas fa-search"></i> Report Found Item
+                </a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="floating-icons">
+                <i class="fas fa-mobile-alt"></i>
+                <i class="fas fa-key"></i>
+                <i class="fas fa-wallet"></i>
+                <i class="fas fa-book"></i>
+                <i class="fas fa-headphones"></i>
+                <i class="fas fa-backpack"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon lost">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.lost }}</h3>
+                        <p>Items Lost</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon found">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.found }}</h3>
+                        <p>Items Found</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon claimed">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3>{{ stats.claimed }}</h3>
+                        <p>Items Reunited</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Items -->
+    {% if recent_items %}
+    <section class="recent-items">
+        <div class="container">
+            <div class="section-header">
+                <h2>Recent Items</h2>
+                <a href="/items" class="view-all-link">View All Items <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div class="items-grid">
+                {% for item in recent_items %}
+                <div class="item-card">
+                    <div class="item-header">
+                        <span class="item-type {{ 'lost' if item[1] == 'Lost' else 'found' }}">
+                            {% if item[1] == 'Lost' %}
+                                <i class="fas fa-search"></i> Lost
+                            {% else %}
+                                <i class="fas fa-check-circle"></i> Found
+                            {% endif %}
+                        </span>
+                        <span class="item-status">{{ item[6] }}</span>
+                    </div>
+                    {% if item[8] %}
+                        <div class="item-image">
+                            <img src="{{ url_for('static', filename=item[8]) }}" alt="{{ item[2] }}">
+                        </div>
+                    {% endif %}
+                    <div class="item-content">
+                        <h3 class="item-title">{{ item[2] }}</h3>
+                        <p class="item-description">{{ item[3][:100] }}{% if item[3]|length > 100 %}...{% endif %}</p>
+                        <div class="item-meta">
+                            <span><i class="fas fa-calendar"></i> {{ item[4] }}</span>
+                            <span><i class="fas fa-map-marker-alt"></i> {{ item[5] }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Report</h3>
+                    <p>Report your lost or found item with detailed description and photo</p>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>Search</h3>
+                    <p>Browse through reported items or use our search and filter features</p>
+                </div>
+                <div class="step">
+                    <div class="step-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <h3>Connect</h3>
+                    <p>Contact the reporter and arrange for item pickup or return</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-search-location"></i>
+                        <span>Campus Recovery Hub</span>
+                    </div>
+                    <p>Connecting campus community members to reunite lost items with their owners.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/report_lost">Report Lost Item</a></li>
+                        <li><a href="/report_found">Report Found Item</a></li>
+                        <li><a href="/items">Browse Items</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-envelope"></i> support@campusrecovery.edu</p>
+                    <p><i class="fas fa-phone"></i> (555) 123-4567</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Campus Recovery Hub. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Close alert messages
+        document.querySelectorAll('.alert-close').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.remove();
+            });
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

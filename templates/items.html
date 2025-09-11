@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Items - Campus Recovery Hub</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-search-location"></i>
+                <span>Campus Recovery Hub</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-home"></i> Home
+                </a>
+                <a href="/report_lost" class="nav-link">
+                    <i class="fas fa-exclamation-triangle"></i> Report Lost
+                </a>
+                <a href="/report_found" class="nav-link">
+                    <i class="fas fa-search"></i> Report Found
+                </a>
+                <a href="/items" class="nav-link active">
+                    <i class="fas fa-list"></i> View Items
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="alert-close">&times;</button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>Lost & Found Items</h1>
+            <p>Browse through reported items or use filters to find what you're looking for</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-section">
+            <form method="GET" class="filters-form">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="search" placeholder="Search items, descriptions, locations..." 
+                               value="{{ current_search }}" class="search-input">
+                    </div>
+                </div>
+                
+                <div class="filter-controls">
+                    <select name="type" class="filter-select">
+                        <option value="">All Types</option>
+                        <option value="Lost" {% if current_type == 'Lost' %}selected{% endif %}>Lost Items</option>
+                        <option value="Found" {% if current_type == 'Found' %}selected{% endif %}>Found Items</option>
+                    </select>
+                    
+                    <select name="category" class="filter-select">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                    
+                    <a href="/items" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Items Grid -->
+        <div class="items-section">
+            {% if items %}
+                <div class="items-count">
+                    <span>{{ items|length }} item(s) found</span>
+                </div>
+                
+                <div class="items-grid">
+                    {% for item in items %}
+                    <div class="item-card detailed">
+                        <div class="item-header">
+                            <div class="item-type-badge {{ 'lost' if item[1] == 'Lost' else 'found' }}">
+                                {% if item[1] == 'Lost' %}
+                                    <i class="fas fa-search"></i> Lost
+                                {% else %}
+                                    <i class="fas fa-check-circle"></i> Found
+                                {% endif %}
+                            </div>
+                            <div class="item-actions">
+                                {% if item[6] != 'Claimed' %}
+                                    <button class="btn-icon btn-claim" onclick="claimItem({{ item[0] }})" 
+                                            title="Mark as claimed">
+                                        <i class="fas fa-handshake"></i>
+                                    </button>
+                                {% endif %}
+                                <button class="btn-icon btn-delete" onclick="deleteItem({{ item[0] }})" 
+                                        title="Delete item">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {% if item[8] %}
+                            <div class="item-image">
+                                <img src="{{ url_for('static', filename=item[8]) }}" alt="{{ item[2] }}" 
+                                     onclick="openImageModal(this.src)">
+                            </div>
+                        {% endif %}
+                        
+                        <div class="item-content">
+                            <h3 class="item-title">{{ item[2] }}</h3>
+                            
+                            {% if item[10] %}
+                                <div class="item-category">
+                                    <i class="fas fa-tag"></i> {{ item[10] }}
+                                </div>
+                            {% endif %}
+                            
+                            <p class="item-description">{{ item[3] }}</p>
+                            
+                            <div class="item-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>{{ item[4] }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <span>{{ item[5] }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>{{ item[7] }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="item-status-footer">
+                                <span class="status-badge {{ 'claimed' if item[6] == 'Claimed' else 'unclaimed' }}">
+                                    {% if item[6] == 'Claimed' %}
+                                        <i class="fas fa-check"></i> Claimed
+                                    {% else %}
+                                        <i class="fas fa-clock"></i> Unclaimed
+                                    {% endif %}
+                                </span>
+                                {% if item[9] %}
+                                    <span class="created-date">
+                                        Posted: {{ item[9][:10] }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="no-items">
+                    <div class="no-items-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>No items found</h3>
+                    <p>Try adjusting your search criteria or check back later for new items.</p>
+                    <div class="no-items-actions">
+                        <a href="/report_lost" class="btn btn-primary">Report Lost Item</a>
+                        <a href="/report_found" class="btn btn-secondary">Report Found Item</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <img id="modalImage" src="" alt="Item Image">
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content small">
+            <h3 id="confirmTitle">Confirm Action</h3>
+            <p id="confirmMessage">Are you sure you want to perform this action?</p>
+            <div class="modal-buttons">
+                <button id="confirmBtn" class="btn btn-primary">Confirm</button>
+                <button id="cancelBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Image modal functionality
+        function openImageModal(src) {
+            document.getElementById('imageModal').style.display = 'block';
+            document.getElementById('modalImage').src = src;
+        }
+
+        document.querySelectorAll('.modal-close').forEach(button => {
+            button.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                modal.style.display = 'none';
+            });
+        });
+
+        // Confirmation modal functionality
+        function showConfirmModal(title, message, callback) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmModal').style.display = 'block';
+            
+            document.getElementById('confirmBtn').onclick = function() {
+                callback();
+                document.getElementById('confirmModal').style.display = 'none';
+            };
+        }
+
+        document.getElementById('cancelBtn').addEventListener('click', function() {
+            document.getElementById('confirmModal').style.display = 'none';
+        });
+
+        // Claim item
+        function claimItem(itemId) {
+            showConfirmModal(
+                'Mark as Claimed',
+                'Are you sure you want to mark this item as claimed?',
+                function() {
+                    window.location.href = '/claim_item/' + itemId;
+                }
+            );
+        }
+
+        // Delete item
+        function deleteItem(itemId) {
+            showConfirmModal(
+                'Delete Item',
+                'Are you sure you want to delete this item? This action cannot be undone.',
+                function() {
+                    window.location.href = '/delete_item/' + itemId;
+                }
+            );
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            const imageModal = document.getElementById('imageModal');
+            const confirmModal = document.getElementById('confirmModal');
+            
+            if (event.target === imageModal) {
+                imageModal.style.display = 'none';
+            }
+            if (event.target === confirmModal) {
+                confirmModal.style.display = 'none';
+            }
+        });
+
+        // Auto-submit form on filter change
+        document.querySelectorAll('.filter-select').forEach(select => {
+            select.addEventListener('change', function() {
+                this.form.submit();
+            });
+        });
+
+        // Close alert messages
+        document.querySelectorAll('.alert-close').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.remove();
+            });
+        });
+
+        // Auto-hide alerts after 5 seconds
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach(alert => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>
