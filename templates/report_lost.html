@@ -43,6 +43,7 @@
         <!-- Form -->
         <div class="form-container">
             <form method="post" enctype="multipart/form-data" class="enhanced-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-section">
                     <h3><i class="fas fa-info-circle"></i> Item Information</h3>
                     

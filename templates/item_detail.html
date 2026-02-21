@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="margin: 40px auto; max-width: 900px;">
+    <a href="{{ url_for('items') }}" class="btn-back">← Back to Items</a>
+
+    <div class="item-detail-container">
+        <div class="item-detail-image">
+            {% if item[9] %}
+                <img src="{{ url_for('static', filename=item[9]) }}" alt="Item image" class="item-image">
+            {% else %}
+                <div class="no-image">
+                    <span style="font-size: 48px;">📦</span>
+                    <p>No Image Available</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="item-detail-info">
+            <div class="item-header">
+                <h1>{{ item[3] }}</h1>
+                <span class="item-type type-{{ item[2].lower() }}">{{ item[2] }}</span>
+                <span class="item-status status-{{ item[7].lower() }}">{{ item[7] }}</span>
+            </div>
+
+            <div class="item-details">
+                <div class="detail-item">
+                    <label>Category</label>
+                    <span>{{ item[13] or 'Not specified' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Location</label>
+                    <span>{{ item[5] or 'Not specified' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Date</label>
+                    <span>{{ item[4] or 'Not specified' }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Posted By</label>
+                    <span>{{ item[15] }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Posted On</label>
+                    <span>{{ item[10][:10] }}</span>
+                </div>
+                <div class="detail-item">
+                    <label>Contact</label>
+                    <span>{{ item[8] }}</span>
+                </div>
+            </div>
+
+            <div class="item-description">
+                <h3>Description</h3>
+                <p>{{ item[4] or 'No description provided.' }}</p>
+            </div>
+
+            <div class="item-actions">
+                {% if current_user.is_authenticated and current_user.id != item[1] %}
+                    <form method="POST" action="{{ url_for('claim_item', item_id=item[0]) }}" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to claim this item?')">
+                            ✓ Claim Item
+                        </button>
+                    </form>
+                {% elif current_user.is_authenticated %}
+                    <form method="POST" action="{{ url_for('delete_item', item_id=item[0]) }}" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this item?')">
+                            🗑️ Delete Item
+                        </button>
+                    </form>
+                {% else %}
+                    <p style="color: #999;">
+                        <a href="{{ url_for('login') }}">Log in</a> to claim this item.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- QR Code Section -->
+        {% if item[11] %}
+        <div class="item-qr-section">
+            <h3>Scan or Share This Item</h3>
+            <div class="qr-code-container">
+                <img src="{{ url_for('static', filename=item[11]) }}" alt="QR Code" class="qr-code">
+                <p>Scan this QR code with your phone to view full item details</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Contact Information Box -->
+    <div class="contact-box">
+        <h3>Contact the Reporter</h3>
+        <p>If you have information about this item or believe you can help, please contact:</p>
+        <div class="contact-info">
+            <p><strong>Contact Details:</strong> {{ item[8] }}</p>
+            <p><strong>Posted By:</strong> {{ item[15] }} ({{ item[16] }})</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-back {
+    display: inline-block;
+    margin-bottom: 20px;
+    padding: 10px 15px;
+    background: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.btn-back:hover {
+    background: #e0e0e0;
+}
+
+.item-detail-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 40px;
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.item-detail-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.item-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    max-height: 500px;
+}
+
+.no-image {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 500px;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+    color: #999;
+}
+
+.item-detail-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.item-header {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 20px;
+}
+
+.item-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.item-type,
+.item-status {
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.item-type.type-lost {
+    background: #ffe8e8;
+    color: #c92a2a;
+}
+
+.item-type.type-found {
+    background: #e8f8e8;
+    color: #2f9e44;
+}
+
+.item-status.status-claimed {
+    background: #e8f8e8;
+    color: #2f9e44;
+}
+
+.item-status.status-unclaimed {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.item-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.detail-item span {
+    color: #333;
+}
+
+.item-description {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.item-description h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.item-description p {
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 0;
+}
+
+.item-actions {
+    margin-top: 20px;
+}
+
+.item-qr-section {
+    grid-column: 1 / -1;
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.item-qr-section h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.qr-code-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    display: inline-block;
+}
+
+.qr-code {
+    width: 200px;
+    height: 200px;
+    border-radius: 8px;
+}
+
+.qr-code-container p {
+    margin: 15px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.contact-box {
+    background: linear-gradient(135deg, #e8f4f8 0%, #f0e8ff 100%);
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.contact-box h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.contact-info {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.contact-info p {
+    margin: 10px 0;
+    color: #333;
+    line-height: 1.6;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+    background: #c92a2a;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #a61e4d;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .item-detail-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .item-image {
+        max-height: 300px;
+    }
+
+    .no-image {
+        height: 300px;
+    }
+
+    .item-header h1 {
+        font-size: 22px;
+    }
+
+    .qr-code {
+        width: 150px;
+        height: 150px;
+    }
+}
+</style>
+{% endblock %}

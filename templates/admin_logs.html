@@ -1,0 +1,402 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Logs - Campus Recovery Hub{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>Activity Logs</h1>
+        <p>System activity, filtering, and export reports</p>
+    </div>
+
+    <div class="reports-controls">
+        <form method="GET" action="{{ url_for('admin_logs') }}" class="reports-form">
+            <input type="text" name="user" class="control-input" value="{{ user_query }}" placeholder="Filter by username">
+            <input type="text" name="action" class="control-input" value="{{ action_filter }}" placeholder="Filter by action">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            {% if user_query or action_filter %}
+                <a href="{{ url_for('admin_logs') }}" class="btn btn-light">Clear</a>
+            {% endif %}
+            <a href="{{ url_for('admin_export_reports', user=user_query, action=action_filter) }}" class="btn btn-success">Export CSV</a>
+        </form>
+    </div>
+
+    {% if action_counts %}
+    <div class="action-summary">
+        {% for action, count in action_counts %}
+            <span class="summary-pill">{{ action }} ({{ count }})</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="logs-table">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Description</th>
+                    <th>IP Address</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if logs %}
+                    {% for log in logs %}
+                    <tr class="log-row action-{{ log[2].lower() }}">
+                        <td><strong>{{ log[1] }}</strong></td>
+                        <td>
+                            <span class="action-badge {{ log[2].lower() }}">
+                                {{ log[2] }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="description">{{ log[3] }}</div>
+                        </td>
+                        <td><code>{{ log[4] or 'N/A' }}</code></td>
+                        <td class="timestamp">{{ log[5] }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="no-data">No activity logs yet</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="{{ url_for('admin_logs', page=1, user=user_query, action=action_filter) }}" class="page-link">First</a>
+            <a href="{{ url_for('admin_logs', page=page-1, user=user_query, action=action_filter) }}" class="page-link">Previous</a>
+        {% endif %}
+
+        {% for p in page_numbers %}
+            {% if p == page %}
+                <span class="page-link active">{{ p }}</span>
+            {% else %}
+                <a href="{{ url_for('admin_logs', page=p, user=user_query, action=action_filter) }}" class="page-link">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page < total_pages %}
+            <a href="{{ url_for('admin_logs', page=page+1, user=user_query, action=action_filter) }}" class="page-link">Next</a>
+            <a href="{{ url_for('admin_logs', page=total_pages, user=user_query, action=action_filter) }}" class="page-link">Last</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="nav-links">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 20px;
+}
+
+.admin-header h1 {
+    margin: 0 0 5px 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.admin-header p {
+    margin: 0;
+    color: #666;
+}
+
+.reports-controls {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 16px;
+    padding: 14px;
+}
+
+.reports-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.control-input {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    min-width: 180px;
+    padding: 8px 10px;
+}
+
+.action-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.summary-pill {
+    background: #e7f1ff;
+    border-radius: 999px;
+    color: #084298;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+}
+
+.logs-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.activity-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.activity-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.activity-table td {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.log-row {
+    transition: background-color 0.2s;
+}
+
+.log-row:hover {
+    background: #f8f9fa;
+}
+
+.action-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.action-badge.admin_dashboard_access {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.action-badge.admin_view_users {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.action-badge.admin_view_items {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.action-badge.user_banned {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.action-badge.user_unbanned {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.action-badge.user_deleted {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.action-badge.item_verified {
+    background: #d4edda;
+    color: #155724;
+}
+
+.action-badge.item_flagged {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.action-badge.item_deleted {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.action-badge.settings_updated {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.action-badge.password_changed {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.action-badge.view_settings {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.action-badge.admin_view_logs {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.action-badge.admin_view_settings {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.description {
+    font-size: 13px;
+    color: #666;
+    max-width: 300px;
+    word-wrap: break-word;
+}
+
+.timestamp {
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+}
+
+code {
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #d63384;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.page-link {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #007bff;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background: #007bff;
+    color: white;
+}
+
+.page-link.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.nav-links {
+    text-align: center;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #1e7e34;
+}
+
+.btn-light {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.btn-light:hover {
+    background: #e9ecef;
+}
+
+@media (max-width: 768px) {
+    .reports-form {
+        flex-direction: column;
+    }
+
+    .control-input,
+    .btn {
+        width: 100%;
+    }
+
+    .activity-table {
+        font-size: 12px;
+    }
+
+    .activity-table th,
+    .activity-table td {
+        padding: 10px;
+    }
+
+    .description {
+        max-width: 150px;
+        font-size: 11px;
+    }
+
+    .timestamp {
+        font-size: 11px;
+    }
+}
+</style>
+{% endblock %}

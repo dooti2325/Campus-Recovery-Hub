@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="margin: 40px auto; max-width: 1000px;">
+    <div class="profile-header">
+        <h1>Welcome, {{ current_user.username }}! 👋</h1>
+        <p>Manage your lost and found items</p>
+    </div>
+
+    <div class="profile-grid">
+        <!-- User Info Section -->
+        <div class="profile-card">
+            <h2>Profile Information</h2>
+            <div class="info-item">
+                <label>Username:</label>
+                <span>{{ user_info[0] }}</span>
+            </div>
+            <div class="info-item">
+                <label>Email:</label>
+                <span>{{ user_info[1] }}</span>
+            </div>
+            <div class="info-item">
+                <label>Reputation Score:</label>
+                <span class="badge">{{ user_info[3] }} ⭐</span>
+            </div>
+            <div class="info-item">
+                <label>Member Since:</label>
+                <span>{{ user_info[4][:10] if user_info[4] else 'N/A' }}</span>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="profile-card">
+            <h2>Your Activity</h2>
+            <div class="stat-grid">
+                <div class="stat">
+                    <div class="stat-number">{{ user_items|length }}</div>
+                    <div class="stat-label">Items Posted</div>
+                </div>
+                <div class="stat">
+                    {% set claimed = user_items|selectattr('3', 'equalto', 'Claimed')|list|length %}
+                    <div class="stat-number">{{ claimed }}</div>
+                    <div class="stat-label">Claimed Items</div>
+                </div>
+                <div class="stat">
+                    {% set unread = notifications|selectattr('2', 'equalto', 0)|list|length %}
+                    <div class="stat-number">{{ unread }}</div>
+                    <div class="stat-label">New Notifications</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Items Section -->
+    <div class="section-card">
+        <h2>Your Posted Items</h2>
+        {% if user_items %}
+            <div class="items-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Date Posted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in user_items %}
+                        <tr>
+                            <td><strong>{{ item[2] }}</strong></td>
+                            <td>
+                                <span class="badge type-{{ item[1].lower() }}">{{ item[1] }}</span>
+                            </td>
+                            <td>
+                                <span class="badge status-{{ item[3].lower() }}">{{ item[3] }}</span>
+                            </td>
+                            <td>{{ item[4][:10] }}</td>
+                            <td>
+                                <a href="{{ url_for('item_detail', item_id=item[0]) }}" class="btn-small">View</a>
+                                <form method="POST" action="{{ url_for('delete_item', item_id=item[0]) }}" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn-small btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="empty-message">You haven't posted any items yet.</p>
+            <div style="margin-top: 20px;">
+                <a href="{{ url_for('report_lost') }}" class="btn btn-primary">Report Lost Item</a>
+                <a href="{{ url_for('report_found') }}" class="btn btn-primary">Report Found Item</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Notifications Section -->
+    <div class="section-card">
+        <h2>Recent Notifications</h2>
+        {% if notifications %}
+            <div class="notifications-list">
+                {% for notif in notifications[:5] %}
+                <div class="notification-item {% if notif[2] == 0 %}unread{% endif %}">
+                    <div class="notification-content">
+                        <p>{{ notif[1] }}</p>
+                        <small>{{ notif[3][:10] }}</small>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if notifications|length > 5 %}
+            <a href="{{ url_for('notifications') }}" class="btn-link">View all notifications</a>
+            {% endif %}
+        {% else %}
+            <p class="empty-message">No notifications yet.</p>
+        {% endif %}
+    </div>
+
+    <div style="margin-top: 30px; text-align: center;">
+        <a href="{{ url_for('user_settings') }}" class="btn btn-primary">Account Settings</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+    </div>
+</div>
+
+<style>
+.profile-header {
+    text-align: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+}
+
+.profile-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+}
+
+.profile-header p {
+    margin: 0;
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.profile-card,
+.section-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.profile-card h2,
+.section-card h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #333;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-item label {
+    font-weight: 600;
+    color: #555;
+}
+
+.info-item span {
+    color: #333;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat {
+    text-align: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-number {
+    font-size: 28px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e8f4f8;
+    color: #0077b6;
+}
+
+.badge.type-lost {
+    background: #ffe8e8;
+    color: #c92a2a;
+}
+
+.badge.type-found {
+    background: #e8f8e8;
+    color: #2f9e44;
+}
+
+.badge.status-claimed {
+    background: #e8f8e8;
+    color: #2f9e44;
+}
+
+.badge.status-unclaimed {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.items-table {
+    overflow-x: auto;
+}
+
+.items-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.items-table th {
+    background: #f8f9fa;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.items-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.items-table tr:hover {
+    background: #f8f9fa;
+}
+
+.btn-small {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #667eea;
+    color: white;
+    border-radius: 4px;
+    font-size: 12px;
+    text-decoration: none;
+    margin-right: 5px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-small:hover {
+    background: #764ba2;
+}
+
+.btn-small.btn-danger {
+    background: #c92a2a;
+}
+
+.btn-small.btn-danger:hover {
+    background: #a61e4d;
+}
+
+.notifications-list {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.notification-item {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f9f9f9;
+    transition: background 0.3s;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.unread {
+    background: #e8f4f8;
+    border-left: 4px solid #667eea;
+    padding-left: 12px;
+}
+
+.notification-content p {
+    margin: 0 0 5px 0;
+    color: #333;
+}
+
+.notification-content small {
+    color: #999;
+    font-size: 12px;
+}
+
+.empty-message {
+    text-align: center;
+    color: #999;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.btn-link {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 16px;
+    color: #667eea;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.3s;
+}
+
+.btn-link:hover {
+    color: #764ba2;
+    text-decoration: underline;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #999;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #777;
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .items-table {
+        font-size: 12px;
+    }
+
+    .items-table th,
+    .items-table td {
+        padding: 8px;
+    }
+}
+</style>
+{% endblock %}

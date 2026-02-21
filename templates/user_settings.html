@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}User Settings - Campus Recovery Hub{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>User Settings</h1>
+        <p>Update your account, preferences, and password</p>
+    </div>
+
+    <div class="settings-grid">
+        <div class="settings-card">
+            <h2>Account & Preferences</h2>
+            <form method="POST" action="{{ url_for('user_update_settings') }}" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" value="{{ user_data[0] }}" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" value="{{ user_data[1] }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="bio">Bio</label>
+                    <textarea id="bio" name="bio" rows="4" placeholder="Tell people about yourself...">{{ user_data[2] or '' }}</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="theme">Theme</label>
+                        <select id="theme" name="theme">
+                            <option value="system" {% if preferences.theme == 'system' %}selected{% endif %}>System</option>
+                            <option value="light" {% if preferences.theme == 'light' %}selected{% endif %}>Light</option>
+                            <option value="dark" {% if preferences.theme == 'dark' %}selected{% endif %}>Dark</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="items_per_page">Items Per Page</label>
+                        <input id="items_per_page" name="items_per_page" type="number" min="6" max="50" value="{{ preferences.items_per_page }}">
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="email_notifications" {% if preferences.email_notifications == 1 %}checked{% endif %}>
+                        <span>Enable email notifications</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="sms_notifications" {% if preferences.sms_notifications == 1 %}checked{% endif %}>
+                        <span>Enable SMS notifications</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </form>
+        </div>
+
+        <div class="settings-card">
+            <h2>Change Password</h2>
+            <form method="POST" action="{{ url_for('user_change_password') }}" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                <div class="form-group">
+                    <label for="current_password">Current Password</label>
+                    <input id="current_password" name="current_password" type="password" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="new_password">New Password</label>
+                    <input id="new_password" name="new_password" type="password" minlength="6" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input id="confirm_password" name="confirm_password" type="password" minlength="6" required>
+                </div>
+
+                <button type="submit" class="btn btn-warning">Update Password</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="{{ url_for('profile') }}" class="btn btn-light">Back to Profile</a>
+    </div>
+</div>
+
+<style>
+.settings-container {
+    margin: 0 auto;
+    max-width: 1000px;
+    padding: 20px;
+}
+
+.settings-header {
+    border-bottom: 2px solid #007bff;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+}
+
+.settings-header h1 {
+    color: #333;
+    font-size: 28px;
+    margin: 0 0 6px 0;
+}
+
+.settings-header p {
+    color: #666;
+    margin: 0;
+}
+
+.settings-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.settings-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 18px;
+}
+
+.settings-card h2 {
+    color: #333;
+    font-size: 18px;
+    margin: 0 0 14px 0;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-row {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.form-group label {
+    color: #555;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    padding: 9px 10px;
+}
+
+.form-group input:disabled {
+    background: #f1f3f5;
+    color: #666;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox-item {
+    align-items: center;
+    color: #444;
+    display: flex;
+    font-size: 14px;
+    gap: 8px;
+}
+
+.btn {
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 14px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-light {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.btn-light:hover {
+    background: #e9ecef;
+}
+
+.nav-links {
+    margin-top: 20px;
+    text-align: center;
+}
+</style>
+{% endblock %}

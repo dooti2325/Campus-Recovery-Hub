@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - Campus Recovery Hub{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>System Settings</h1>
+        <p>Configure system parameters and options</p>
+    </div>
+
+    <div class="settings-card">
+        <form method="POST" action="{{ url_for('admin_update_settings') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+            <div class="settings-section">
+                <h3>File Upload Settings</h3>
+
+                <div class="form-group">
+                    <label for="max_file_size">Maximum File Size (MB)</label>
+                    <input type="number" id="max_file_size" name="max_file_size"
+                           value="{{ settings.get('max_file_size', 16) }}"
+                           min="1" max="100" step="1">
+                    <small>Maximum size for user uploads (default: 16 MB)</small>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Maintenance Settings</h3>
+
+                <div class="form-group">
+                    <label for="maintenance_mode">Maintenance Mode</label>
+                    <select id="maintenance_mode" name="maintenance_mode">
+                        <option value="0" {% if settings.get('maintenance_mode') == '0' %}selected{% endif %}>Disabled</option>
+                        <option value="1" {% if settings.get('maintenance_mode') == '1' %}selected{% endif %}>Enabled</option>
+                    </select>
+                    <small>Enable to show maintenance message to users</small>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Email Settings</h3>
+
+                <div class="form-group">
+                    <label for="mail_server">Mail Server</label>
+                    <input type="text" id="mail_server" name="mail_server"
+                           value="{{ settings.get('mail_server', 'smtp.gmail.com') }}"
+                           placeholder="e.g., smtp.gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="mail_port">Mail Port</label>
+                    <input type="number" id="mail_port" name="mail_port"
+                           value="{{ settings.get('mail_port', 587) }}"
+                           min="1" max="65535">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="info-card">
+        <h3>Current Settings Summary</h3>
+        <div class="settings-summary">
+            <p><strong>All Settings:</strong></p>
+            <ul>
+                {% for key, value in settings.items() %}
+                    <li><span class="setting-key">{{ key }}:</span> <span class="setting-value">{{ value or 'Not set' }}</span></li>
+                {% endfor %}
+                {% if not settings %}
+                    <li class="no-settings">No custom settings configured yet</li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 20px;
+}
+
+.admin-header h1 {
+    margin: 0 0 5px 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.admin-header p {
+    margin: 0;
+    color: #666;
+}
+
+.settings-card {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.settings-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-section h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: #333;
+    font-weight: 600;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 6px;
+    color: #666;
+    font-size: 12px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #17a2b8;
+}
+
+.info-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.settings-summary ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.settings-summary li {
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.settings-summary li:last-child {
+    border-bottom: none;
+}
+
+.setting-key {
+    color: #666;
+    font-weight: 600;
+}
+
+.setting-value {
+    color: #333;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.no-settings {
+    font-style: italic;
+    color: #999;
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 15px;
+    }
+
+    .settings-card {
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}

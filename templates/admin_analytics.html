@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Campus Recovery Hub{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <div class="analytics-header">
+        <h1>Statistics & Analytics</h1>
+        <p>Performance insights for the last {{ period_days }} days</p>
+    </div>
+
+    <div class="period-selector">
+        <a href="{{ url_for('admin_analytics', period='7') }}" class="period-link {% if period == '7' %}active{% endif %}">7 Days</a>
+        <a href="{{ url_for('admin_analytics', period='30') }}" class="period-link {% if period == '30' %}active{% endif %}">30 Days</a>
+        <a href="{{ url_for('admin_analytics', period='90') }}" class="period-link {% if period == '90' %}active{% endif %}">90 Days</a>
+        <a href="{{ url_for('admin_analytics', period='365') }}" class="period-link {% if period == '365' %}active{% endif %}">365 Days</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>New Users</h3>
+            <p class="stat-number">{{ new_users }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>New Items</h3>
+            <p class="stat-number">{{ new_items }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Lost Reports</h3>
+            <p class="stat-number">{{ lost_reports }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Found Reports</h3>
+            <p class="stat-number">{{ found_reports }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Claimed Items</h3>
+            <p class="stat-number">{{ claimed_items }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Claim Rate</h3>
+            <p class="stat-number">{{ claim_rate }}%</p>
+        </div>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h3>Daily Item Activity</h3>
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if daily_item_activity %}
+                        {% for day, count in daily_item_activity %}
+                            <tr>
+                                <td>{{ day }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="2" class="no-data">No data available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Top Categories</h3>
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if top_categories %}
+                        {% for category, count in top_categories %}
+                            <tr>
+                                <td>{{ category }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="2" class="no-data">No data available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Top Reporters</h3>
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Items</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if top_reporters %}
+                        {% for username, count in top_reporters %}
+                            <tr>
+                                <td>{{ username }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="2" class="no-data">No data available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Top Actions</h3>
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if top_actions %}
+                        {% for action, count in top_actions %}
+                            <tr>
+                                <td>{{ action }}</td>
+                                <td>{{ count }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="2" class="no-data">No data available</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+.analytics-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.analytics-header {
+    margin-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 18px;
+}
+
+.analytics-header h1 {
+    margin: 0 0 8px 0;
+    color: #333;
+    font-size: 28px;
+}
+
+.analytics-header p {
+    margin: 0;
+    color: #666;
+}
+
+.period-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.period-link {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    color: #333;
+    padding: 8px 12px;
+    text-decoration: none;
+}
+
+.period-link.active {
+    background: #007bff;
+    border-color: #007bff;
+    color: #fff;
+}
+
+.stats-grid {
+    display: grid;
+    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 16px;
+}
+
+.stat-card h3 {
+    color: #666;
+    font-size: 13px;
+    margin: 0 0 8px 0;
+}
+
+.stat-number {
+    color: #222;
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.analytics-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    margin-bottom: 20px;
+}
+
+.analytics-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.analytics-card h3 {
+    margin: 0;
+    padding: 14px 16px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    font-size: 16px;
+}
+
+.analytics-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.analytics-table th,
+.analytics-table td {
+    border-bottom: 1px solid #e9ecef;
+    font-size: 13px;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.analytics-table th {
+    background: #fcfcfc;
+    color: #555;
+}
+
+.no-data {
+    color: #999;
+    padding: 18px;
+    text-align: center;
+}
+
+.nav-links {
+    text-align: center;
+}
+
+.btn {
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 14px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+</style>
+{% endblock %}

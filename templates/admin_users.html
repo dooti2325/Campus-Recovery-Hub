@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Campus Recovery Hub{% endblock %}
+
+{% block content %}
+{% set next_url = request.full_path[:-1] if request.full_path.endswith('?') else request.full_path %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>User Management</h1>
+        <p>View, search, and manage user accounts</p>
+    </div>
+
+    <div class="filters-panel">
+        <form method="GET" action="{{ url_for('admin_users') }}" class="filters-form">
+            <input
+                type="text"
+                name="q"
+                class="filter-input"
+                value="{{ search_query }}"
+                placeholder="Search by username or email"
+            >
+            <select name="role" class="filter-select">
+                <option value="all" {% if role_filter == 'all' %}selected{% endif %}>All Roles</option>
+                <option value="admin" {% if role_filter == 'admin' %}selected{% endif %}>Admins</option>
+                <option value="user" {% if role_filter == 'user' %}selected{% endif %}>Users</option>
+            </select>
+            <select name="status" class="filter-select">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="banned" {% if status_filter == 'banned' %}selected{% endif %}>Banned</option>
+            </select>
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            {% if search_query or role_filter != 'all' or status_filter != 'all' %}
+                <a href="{{ url_for('admin_users') }}" class="btn btn-light">Clear</a>
+            {% endif %}
+        </form>
+        <p class="filter-summary">
+            Showing {{ filtered_users }} of {{ total_users }} users
+        </p>
+    </div>
+
+    <div class="management-table">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Reputation</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Ban Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if users %}
+                    {% for user in users %}
+                    <tr>
+                        <td><strong>{{ user[1] }}</strong></td>
+                        <td>{{ user[2] }}</td>
+                        <td><span class="reputation-badge">{{ user[3] }}</span></td>
+                        <td>
+                            {% if user[4] == 1 %}
+                                <span class="role-badge admin">Admin</span>
+                            {% else %}
+                                <span class="role-badge user">User</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user[5] == 1 %}
+                                <span class="status-badge banned">Banned</span>
+                            {% else %}
+                                <span class="status-badge active">Active</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user[7][:10] }}</td>
+                        <td>
+                            {% if user[5] == 1 and user[6] %}
+                                {{ user[6] }}
+                            {% else %}
+                                <span class="muted-text">-</span>
+                            {% endif %}
+                        </td>
+                        <td class="actions">
+                            {% if user[0] == current_user.id %}
+                                <span class="self-indicator">Current User</span>
+                            {% else %}
+                                <form method="POST" action="{{ url_for('admin_update_user_role', user_id=user[0]) }}" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="next_url" value="{{ next_url }}"/>
+                                    {% if user[4] == 1 %}
+                                        <input type="hidden" name="role" value="user"/>
+                                        <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Demote this admin to user?')">Demote</button>
+                                    {% else %}
+                                        <input type="hidden" name="role" value="admin"/>
+                                        <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Promote this user to admin?')">Promote</button>
+                                    {% endif %}
+                                </form>
+
+                                {% if user[5] == 0 %}
+                                    <form method="POST" action="{{ url_for('admin_ban_user', user_id=user[0]) }}" style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <input type="hidden" name="next_url" value="{{ next_url }}"/>
+                                        <input type="hidden" name="ban_reason" value="Violation of terms"/>
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Ban this user?')">Ban</button>
+                                    </form>
+                                {% else %}
+                                    <form method="POST" action="{{ url_for('admin_unban_user', user_id=user[0]) }}" style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <input type="hidden" name="next_url" value="{{ next_url }}"/>
+                                        <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Unban this user?')">Unban</button>
+                                    </form>
+                                {% endif %}
+
+                                <form method="POST" action="{{ url_for('admin_delete_user', user_id=user[0]) }}" style="display:inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <input type="hidden" name="next_url" value="{{ next_url }}"/>
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this user? This action cannot be undone.')">Delete</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="no-data">No users found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="{{ url_for('admin_users', page=1, q=search_query, role=role_filter, status=status_filter) }}" class="page-link">First</a>
+            <a href="{{ url_for('admin_users', page=page-1, q=search_query, role=role_filter, status=status_filter) }}" class="page-link">Previous</a>
+        {% endif %}
+
+        {% for p in page_numbers %}
+            {% if p == page %}
+                <span class="page-link active">{{ p }}</span>
+            {% else %}
+                <a href="{{ url_for('admin_users', page=p, q=search_query, role=role_filter, status=status_filter) }}" class="page-link">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page < total_pages %}
+            <a href="{{ url_for('admin_users', page=page+1, q=search_query, role=role_filter, status=status_filter) }}" class="page-link">Next</a>
+            <a href="{{ url_for('admin_users', page=total_pages, q=search_query, role=role_filter, status=status_filter) }}" class="page-link">Last</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="nav-links">
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+
+<style>
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.admin-header {
+    margin-bottom: 30px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 20px;
+}
+
+.admin-header h1 {
+    margin: 0 0 5px 0;
+    font-size: 28px;
+    color: #333;
+}
+
+.admin-header p {
+    margin: 0;
+    color: #666;
+}
+
+.filters-panel {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    padding: 16px;
+}
+
+.filters-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-input,
+.filter-select {
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+    padding: 8px 10px;
+}
+
+.filter-input {
+    flex: 1;
+    min-width: 220px;
+}
+
+.filter-select {
+    min-width: 150px;
+}
+
+.filter-summary {
+    color: #666;
+    font-size: 13px;
+    margin-top: 10px;
+}
+
+.management-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    overflow-x: auto;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.users-table td {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.users-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.reputation-badge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.role-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.role-badge.admin {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.role-badge.user {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-badge.active {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.banned {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-light {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+
+.btn-light:hover {
+    background: #e9ecef;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #333;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.self-indicator {
+    color: #6c757d;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.muted-text {
+    color: #999;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.page-link {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #007bff;
+    transition: all 0.2s;
+}
+
+.page-link:hover {
+    background: #007bff;
+    color: white;
+}
+
+.page-link.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.nav-links {
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .users-table {
+        font-size: 13px;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 10px;
+    }
+
+    .filters-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .filter-input,
+    .filter-select,
+    .btn {
+        width: 100%;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+
+    .btn-sm {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}

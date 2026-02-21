@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="text-align: center; margin: 100px auto;">
+    <div class="error-container">
+        <div class="error-code">403</div>
+        <h1>Access Denied</h1>
+        <p>You don't have permission to access this resource.</p>
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Go to Homepage</a>
+        {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('login') }}" class="btn btn-secondary">Log In</a>
+        {% else %}
+            <a href="{{ url_for('profile') }}" class="btn btn-secondary">Go to Profile</a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.error-container {
+    background: white;
+    border-radius: 12px;
+    padding: 60px 30px;
+    max-width: 600px;
+    margin: 0 auto;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.error-code {
+    font-size: 96px;
+    font-weight: bold;
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0;
+    line-height: 1;
+}
+
+.error-container h1 {
+    font-size: 32px;
+    color: #333;
+    margin: 20px 0 10px 0;
+}
+
+.error-container p {
+    color: #666;
+    font-size: 16px;
+    margin-bottom: 30px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    margin: 10px 5px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
