@@ -91,7 +91,7 @@ vercel env add MAIL_DEFAULT_SENDER
 1. Go to your project settings
 2. Navigate to "Environment Variables"
 3. Add each variable:
-   - `SECRET_KEY` - Use a strong random string
+   - `SECRET_KEY` - Passcode
    - `FLASK_ENV` - Set to `production`
    - `FLASK_DEBUG` - Set to `False`
    - `MAIL_SERVER` - smtp.gmail.com
